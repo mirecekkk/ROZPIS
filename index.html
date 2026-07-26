@@ -61,16 +61,30 @@
             min-height: 24px;
             color: #64748b;
             font-size: 0.95rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
         }
         .worker-badge {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             background: #dbeafe;
             color: #1e40af;
-            padding: 4px 8px;
+            padding: 6px 12px;
             border-radius: 9999px;
-            margin-right: 5px;
-            margin-bottom: 5px;
             font-weight: 500;
+        }
+        .delete-btn {
+            margin-left: 8px;
+            color: #ef4444;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .delete-btn:hover {
+            color: #b91c1c;
         }
         button {
             background-color: var(--primary);
@@ -82,6 +96,7 @@
             font-weight: bold;
             cursor: pointer;
             width: 100%;
+            margin-top: 5px;
         }
         button:hover {
             background-color: #1d4ed8;
@@ -103,10 +118,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, arrayUnion } 
+        // Přidán import 'arrayRemove' pro mazání z pole
+        import { getFirestore, doc, onSnapshot, setDoc, arrayUnion, arrayRemove } 
         from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-        // Tvoje Firebase konfigurace
         const firebaseConfig = {
             apiKey: "AIzaSyAvAHyLWEaCQO3cXws3m5vZ844mQd3-eIY",
             authDomain: "rozpis-zabava.firebaseapp.com",
@@ -120,23 +135,20 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Seznam směn (Můžeš upravovat názvy a přidávat další)
+        // Seznam směn - OPRAVENA DUPLICITNÍ ID (původně měly bar a vstup stejné ID)
         const seznamSmen = [
             { id: "vycep_20_22", name: "20:00 - 21:30 (Pivo, Limo, Jídlo)" },
             { id: "vstup_20_22", name: "20:00 - 21:30 (Vstup)" },
-            { id: "vstup_20_22", name: "20:00 - 21:30 (Bar)" },
+            { id: "bar_20_22", name: "20:00 - 21:30 (Bar)" },
             { id: "vycep_21_30", name: "21:30 - 23:00 (Pivo, Limo, Jídlo)" },
             { id: "vstup_21_30", name: "21:30 - 23:00 (Vstup)" },
-            { id: "vstup_21_30", name: "21:30 - 23:00 (Bar)" },
+            { id: "bar_21_30", name: "21:30 - 23:00 (Bar)" },
             { id: "vycep_23_00", name: "23:00 - 01:00 (Pivo, Limo, Jídlo)" },
             { id: "vstup_23_00", name: "23:00 - 01:00 (Vstup)" },
-            { id: "vstup_23_00", name: "23:00 - 01:00 (Bar)" },
+            { id: "bar_23_00", name: "23:00 - 01:00 (Bar)" },
             { id: "vycep_00_30", name: "02:00 - konec (Pivo, Limo, Jídlo)" },
             { id: "vstup_00_30", name: "02:00 - konec (Vstup)" },
-            { id: "vstup_00_30", name: "02:00 - konec (Bar)" }
-
-
-           
+            { id: "bar_00_30", name: "02:00 - konec (Bar)" }
         ];
 
         const container = document.getElementById('shiftsContainer');
@@ -168,10 +180,24 @@
                 await setDoc(docRef, {
                     [shiftId]: arrayUnion(jmenoInput)
                 }, { merge: true });
-                document.getElementById('userName').value = ''; // Vymaže jméno po úspěšném zápisu
+                document.getElementById('userName').value = ''; 
             } catch (error) {
                 console.error("Chyba při zápisu:", error);
-                alert("Chyba! Máš ve Firebase nastavená pravidla na 'allow read, write: if true;'?");
+                alert("Chyba při ukládání!");
+            }
+        };
+
+        // Funkce pro vymazání
+        window.vymazMe = async function(shiftId, jmenoKeSmazani) {
+            if(confirm(`Opravdu chceš smazat jméno "${jmenoKeSmazani}" z této směny?`)) {
+                try {
+                    await setDoc(docRef, {
+                        [shiftId]: arrayRemove(jmenoKeSmazani)
+                    }, { merge: true });
+                } catch (error) {
+                    console.error("Chyba při mazání:", error);
+                    alert("Nepodařilo se smazat jméno.");
+                }
             }
         };
 
@@ -185,8 +211,12 @@
                     const lidi = data[smena.id] || [];
                     
                     if (lidi.length > 0) {
+                        // Přidán prvek křížku (x) pro smazání s voláním funkce vymazMe
                         listElement.innerHTML = lidi.map(jmeno => 
-                            `<span class="worker-badge">${jmeno}</span>`
+                            `<span class="worker-badge">
+                                ${jmeno} 
+                                <span class="delete-btn" onclick="vymazMe('${smena.id}', '${jmeno}')">&times;</span>
+                            </span>`
                         ).join('');
                     } else {
                         listElement.innerHTML = "Zatím tu nikdo není...";
