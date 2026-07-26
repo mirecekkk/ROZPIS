@@ -94,7 +94,7 @@
 
     <div class="user-input-section">
         <label for="userName"><strong>Kdo jsi?</strong> (Napiš své jméno, než se zapíšeš)</label>
-        <input type="text" id="userName" placeholder="Např. Franta Novák">
+        <input type="text" id="userName" placeholder="Např. Míra K.">
     </div>
 
     <div id="shiftsContainer">
@@ -122,11 +122,21 @@
 
         // Seznam směn (Můžeš upravovat názvy a přidávat další)
         const seznamSmen = [
-            { id: "vycep_20_22", name: "Pátek 20:00 - 22:00 (Výčep)" },
-            { id: "vstup_20_22", name: "Pátek 20:00 - 22:00 (Vstup)" },
-            { id: "vycep_22_00", name: "Pátek 22:00 - 00:00 (Výčep)" },
-            { id: "vstup_22_00", name: "Pátek 22:00 - 00:00 (Vstup)" },
-            { id: "uklid_sobota", name: "Sobota 10:00 (Ranní úklid a dospávačka)" }
+            { id: "vycep_20_22", name: "20:00 - 21:30 (Pivo, Limo, Jídlo)" },
+            { id: "vstup_20_22", name: "20:00 - 21:30 (Vstup)" },
+            { id: "vstup_20_22", name: "20:00 - 21:30 (Bar)" },
+            { id: "vycep_21_30", name: "21:30 - 23:00 (Pivo, Limo, Jídlo)" },
+            { id: "vstup_21_30", name: "21:30 - 23:00 (Vstup)" },
+            { id: "vstup_21_30", name: "21:30 - 23:00 (Bar)" },
+            { id: "vycep_23_00", name: "23:00 - 01:00 (Pivo, Limo, Jídlo)" },
+            { id: "vstup_23_00", name: "23:00 - 01:00 (Vstup)" },
+            { id: "vstup_23_00", name: "23:00 - 01:00 (Bar)" },
+            { id: "vycep_00_30", name: "02:00 - konec (Pivo, Limo, Jídlo)" },
+            { id: "vstup_00_30", name: "02:00 - konec (Vstup)" },
+            { id: "vstup_00_30", name: "02:00 - konec (Bar)" }
+
+
+           
         ];
 
         const container = document.getElementById('shiftsContainer');
