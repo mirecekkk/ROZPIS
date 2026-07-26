@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rozpis směn na zábavu</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .user-input-section {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+            position: sticky;
+            top: 10px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+        .shift-card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .shift-header {
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+        .workers-list {
+            min-height: 24px;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        .worker-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🍻 Rozpis na zábavu</h1>
+
+    <div class="user-input-section">
+        <label for="userName"><strong>Kdo jsi?</strong> (Napiš své jméno, než se zapíšeš)</label>
+        <input type="text" id="userName" placeholder="Např. Franta Novák">
+    </div>
+
+    <div id="shiftsContainer">
+        <!-- Zde se vygenerují směny -->
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, arrayUnion } 
+        from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Tvoje Firebase konfigurace
+        const firebaseConfig = {
+            apiKey: "AIzaSyAvAHyLWEaCQO3cXws3m5vZ844mQd3-eIY",
+            authDomain: "rozpis-zabava.firebaseapp.com",
+            projectId: "rozpis-zabava",
+            storageBucket: "rozpis-zabava.firebasestorage.app",
+            messagingSenderId: "835118326941",
+            appId: "1:835118326941:web:5c5be9a23ebc53c1566074",
+            measurementId: "G-FYSWG5GTMV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Seznam směn (Můžeš upravovat názvy a přidávat další)
+        const seznamSmen = [
+            { id: "vycep_20_22", name: "Pátek 20:00 - 22:00 (Výčep)" },
+            { id: "vstup_20_22", name: "Pátek 20:00 - 22:00 (Vstup)" },
+            { id: "vycep_22_00", name: "Pátek 22:00 - 00:00 (Výčep)" },
+            { id: "vstup_22_00", name: "Pátek 22:00 - 00:00 (Vstup)" },
+            { id: "uklid_sobota", name: "Sobota 10:00 (Ranní úklid a dospávačka)" }
+        ];
+
+        const container = document.getElementById('shiftsContainer');
+        const docRef = doc(db, "akce", "rozpis_zaba");
+
+        // Vykreslení HTML pro každou směnu
+        seznamSmen.forEach(smena => {
+            const div = document.createElement('div');
+            div.className = 'shift-card';
+            div.innerHTML = `
+                <div class="shift-header">${smena.name}</div>
+                <div class="workers-list" id="list_${smena.id}">Zatím tu nikdo není...</div>
+                <button onclick="zapisMe('${smena.id}')">Zapsat se sem</button>
+            `;
+            container.appendChild(div);
+        });
+
+        // Funkce pro zápis
+        window.zapisMe = async function(shiftId) {
+            const jmenoInput = document.getElementById('userName').value.trim();
+            
+            if (!jmenoInput) {
+                alert("Nejdřív napiš svoje jméno nahoru do políčka!");
+                document.getElementById('userName').focus();
+                return;
+            }
+
+            try {
+                await setDoc(docRef, {
+                    [shiftId]: arrayUnion(jmenoInput)
+                }, { merge: true });
+                document.getElementById('userName').value = ''; // Vymaže jméno po úspěšném zápisu
+            } catch (error) {
+                console.error("Chyba při zápisu:", error);
+                alert("Chyba! Máš ve Firebase nastavená pravidla na 'allow read, write: if true;'?");
+            }
+        };
+
+        // Naslouchání změnám z databáze v reálném čase
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                seznamSmen.forEach(smena => {
+                    const listElement = document.getElementById(`list_${smena.id}`);
+                    const lidi = data[smena.id] || [];
+                    
+                    if (lidi.length > 0) {
+                        listElement.innerHTML = lidi.map(jmeno => 
+                            `<span class="worker-badge">${jmeno}</span>`
+                        ).join('');
+                    } else {
+                        listElement.innerHTML = "Zatím tu nikdo není...";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
