@@ -41,6 +41,14 @@
             box-sizing: border-box;
             margin-top: 5px;
         }
+        .category-title {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
         .shift-card {
             background: var(--card);
             padding: 15px;
@@ -106,11 +114,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        // Změna importu na Realtime Database
         import { getDatabase, ref, onValue, push, set } 
         from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-        // Tvoje Firebase konfigurace + PŘIDANÁ databaseURL
+        // Tvoje Firebase konfigurace
         const firebaseConfig = {
             apiKey: "AIzaSyAvAHyLWEaCQO3cXws3m5vZ844mQd3-eIY",
             authDomain: "rozpis-zabava.firebaseapp.com",
@@ -119,34 +126,48 @@
             messagingSenderId: "835118326941",
             appId: "1:835118326941:web:5c5be9a23ebc53c1566074",
             measurementId: "G-FYSWG5GTMV",
-            // DŮLEŽITÉ PRO REALTIME DATABASE (zkontroluj, zda to končí na europe-west1, pokud jsi vybral EU):
             databaseURL: "https://rozpis-zabava-default-rtdb.europe-west1.firebasedatabase.app" 
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Seznam směn
+        // Seznam směn - přeskládáno podle stanovišť
         const seznamSmen = [
-            { id: "vycep_20_22", name: "20:00 - 21:30 (Pivo, Limo, Jídlo)" },
-            { id: "vstup_20_22", name: "20:00 - 21:30 (Vstup)" },
-            { id: "bar_20_22", name: "20:00 - 21:30 (Bar)" },
-            { id: "vycep_21_30", name: "21:30 - 23:00 (Pivo, Limo, Jídlo)" },
-            { id: "vstup_21_30", name: "21:30 - 23:00 (Vstup)" },
-            { id: "bar_21_30", name: "21:30 - 23:00 (Bar)" },
-            { id: "vycep_23_00", name: "23:00 - 01:00 (Pivo, Limo, Jídlo)" },
-            { id: "vstup_23_00", name: "23:00 - 01:00 (Vstup)" },
-            { id: "bar_23_00", name: "23:00 - 01:00 (Bar)" },
-            { id: "vycep_00_30", name: "02:00 - konec (Pivo, Limo, Jídlo)" },
-            { id: "vstup_00_30", name: "02:00 - konec (Vstup)" },
-            { id: "bar_00_30", name: "02:00 - konec (Bar)" }
+            // BAR
+            { id: "bar_20_22", name: "20:00 - 21:30 (Bar)", category: "🍹 Bar" },
+            { id: "bar_21_30", name: "21:30 - 23:00 (Bar)", category: "🍹 Bar" },
+            { id: "bar_23_00", name: "23:00 - 01:00 (Bar)", category: "🍹 Bar" },
+            { id: "bar_00_30", name: "02:00 - konec (Bar)", category: "🍹 Bar" },
+            
+            // PIVO, LIMO, JÍDLO
+            { id: "vycep_20_22", name: "20:00 - 21:30 (Pivo, Limo, Jídlo)", category: "🍺 Pivo, Limo, Jídlo" },
+            { id: "vycep_21_30", name: "21:30 - 23:00 (Pivo, Limo, Jídlo)", category: "🍺 Pivo, Limo, Jídlo" },
+            { id: "vycep_23_00", name: "23:00 - 01:00 (Pivo, Limo, Jídlo)", category: "🍺 Pivo, Limo, Jídlo" },
+            { id: "vycep_00_30", name: "02:00 - konec (Pivo, Limo, Jídlo)", category: "🍺 Pivo, Limo, Jídlo" },
+            
+            // VSTUP
+            { id: "vstup_20_22", name: "20:00 - 21:30 (Vstup)", category: "🎟️ Vstup" },
+            { id: "vstup_21_30", name: "21:30 - 23:00 (Vstup)", category: "🎟️ Vstup" },
+            { id: "vstup_23_00", name: "23:00 - 01:00 (Vstup)", category: "🎟️ Vstup" },
+            { id: "vstup_00_30", name: "02:00 - konec (Vstup)", category: "🎟️ Vstup" }
         ];
 
         const container = document.getElementById('shiftsContainer');
         const dbRef = ref(db, 'rozpis');
 
-        // Vykreslení HTML
+        // Vykreslení HTML s kategoriemi
+        let currentCategory = "";
         seznamSmen.forEach(smena => {
+            // Přidá nadpis kategorie, pokud se změnila
+            if (smena.category !== currentCategory) {
+                const categoryDiv = document.createElement('h2');
+                categoryDiv.className = 'category-title';
+                categoryDiv.innerText = smena.category;
+                container.appendChild(categoryDiv);
+                currentCategory = smena.category;
+            }
+
             const div = document.createElement('div');
             div.className = 'shift-card';
             div.innerHTML = `
@@ -157,7 +178,7 @@
             container.appendChild(div);
         });
 
-        // Funkce pro zápis (teď posílá data do Realtime Database)
+        // Funkce pro zápis
         window.zapisMe = async function(shiftId) {
             const jmenoInput = document.getElementById('userName').value.trim();
             
@@ -168,7 +189,6 @@
             }
 
             try {
-                // Přidá nové jméno pod konkrétní směnu (vygeneruje mu unikátní klíč)
                 const shiftRef = ref(db, 'rozpis/' + shiftId);
                 const newNameRef = push(shiftRef);
                 await set(newNameRef, jmenoInput);
@@ -186,9 +206,9 @@
             
             seznamSmen.forEach(smena => {
                 const listElement = document.getElementById(`list_${smena.id}`);
-                const lidiObjekt = data[smena.id] || {};
+                if (!listElement) return; // Ochrana kdyby prvek chyběl
                 
-                // Převede objekt na pole jmen
+                const lidiObjekt = data[smena.id] || {};
                 const lidi = Object.values(lidiObjekt);
                 
                 if (lidi.length > 0) {
