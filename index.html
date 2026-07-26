@@ -132,6 +132,15 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // Vychytávka: Uložení jména do paměti prohlížeče
+        const userNameInput = document.getElementById('userName');
+        if (localStorage.getItem("ulozeneJmeno")) {
+            userNameInput.value = localStorage.getItem("ulozeneJmeno");
+        }
+        userNameInput.addEventListener('input', (e) => {
+            localStorage.setItem("ulozeneJmeno", e.target.value);
+        });
+
         // Seznam směn - přeskládáno podle stanovišť
         const seznamSmen = [
             // BAR
@@ -159,7 +168,6 @@
         // Vykreslení HTML s kategoriemi
         let currentCategory = "";
         seznamSmen.forEach(smena => {
-            // Přidá nadpis kategorie, pokud se změnila
             if (smena.category !== currentCategory) {
                 const categoryDiv = document.createElement('h2');
                 categoryDiv.className = 'category-title';
@@ -180,11 +188,11 @@
 
         // Funkce pro zápis
         window.zapisMe = async function(shiftId) {
-            const jmenoInput = document.getElementById('userName').value.trim();
+            const jmenoInput = userNameInput.value.trim();
             
             if (!jmenoInput) {
                 alert("Nejdřív napiš svoje jméno nahoru do políčka!");
-                document.getElementById('userName').focus();
+                userNameInput.focus();
                 return;
             }
 
@@ -193,7 +201,9 @@
                 const newNameRef = push(shiftRef);
                 await set(newNameRef, jmenoInput);
                 
-                document.getElementById('userName').value = ''; 
+                // ZDE SE JMÉNO PŮVODNĚ MAZALO - ŘÁDEK JE PRYČ
+                // Takže jméno zůstane vyplněné i po zapsání na směnu.
+                
             } catch (error) {
                 console.error("Chyba při zápisu:", error);
                 alert("Chyba při ukládání! Zkontroluj pravidla v Realtime Database.");
@@ -206,7 +216,7 @@
             
             seznamSmen.forEach(smena => {
                 const listElement = document.getElementById(`list_${smena.id}`);
-                if (!listElement) return; // Ochrana kdyby prvek chyběl
+                if (!listElement) return; 
                 
                 const lidiObjekt = data[smena.id] || {};
                 const lidi = Object.values(lidiObjekt);
